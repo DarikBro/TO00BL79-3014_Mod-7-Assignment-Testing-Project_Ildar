@@ -1,0 +1,159 @@
+
+#******************** Settings ************************
+
+*** Settings ***
+
+Documentation
+User Registration test scenario on GitLab. Verify that user can register with valid data and system shows errors with invalid / empty data.	
+
+Pre Condition	Open Browser and navigate to https://gitlab.com/users/sign_up	
+Post Condition	Close All Browsers
+Tags	Register, TS-Register, SignUp
+
+
+#******************* Common Variables ********************
+
+*** Variables ***
+
+LoginUrl = https://gitlab.com/users/sign_up
+
+# --- Example Valid Test Data ---
+FirstName = TestName
+LastName = TestLastName
+Valid_Username = test_user 
+Valid_Email = test_user_@gmail.com
+Valid_Password = Test1234!
+Valid_Verification_Code = 123456
+
+# --- Example Invalid Test Data ---
+Taken_UserName = DarikBro #taken
+Invalid_UserName = TestUserName\
+Invalid_Email = 1asf.com
+Invalid_Password = *** #too short
+Invalid_Verification_Code = 999999 # wrong code
+Empty = 
+
+
+#******************** Test Cases *************************
+
+*** Test Case ***
+
+# Positive Test
+
+Register With Valid Credentials
+    Navigate To Register Page   RegisterUrl
+    Input First Name            FirstName
+    Input Last Name             LastName
+    Input Username              Valid_Username
+    Input Email                 Valid_Email
+    Input Password              Valid_Password
+    Click Continue
+    Verify Page Should Contain  We've sent a verification code
+    Input Verification Code     Verification_Code
+    Click Verify Email Address
+    Verify Page Should Contain  Verification successful
+    Verify Redirect To          Welcome Page
+    Verify Page Should Contain  Welcome to GitLab {FirstName}!	 
+
+
+# Negative Test 
+
+Register With Taken Username
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Taken_UserName
+    Input Email                Valid_Email
+    Input Password             Valid_Password
+    Click Continue
+    Verify Page Should Contain Username has already been taken	 
+
+Register With Invalid Username Format
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Invalid_UserName
+    Input Email                Valid_Email
+    Input Password             Valid_Password
+    Click Continue
+    Verify Page Should Contain Username is invalid
+
+Register With Invalid Email
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Valid_Username
+    Input Email                Invalid_Email
+    Input Password             Valid_Password
+    Click Continue
+    Verify Page Should Contain Please provide a valid email address
+
+Register With Invalid Password
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Valid_Username
+    Input Email                Valid_Email
+    Input Password             Invalid_Password
+    Click Continue
+    Verify Page Should Contain Must be between 8–128 characters
+
+Register With Empty Fields
+    Navigate To Register Page  RegisterUrl
+    Input First Name           Empty
+    Input Last Name            Empty
+    Input Username             Empty
+    Input Email                Empty
+    Input Password             Empty
+    Click Continue
+    Verify Page Should Contain  This field is required
+
+Register With Empty Username Only
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Empty
+    Input Email                Valid_Email
+    Input Password             Valid_Password
+    Click Continue
+    Verify Page Should Contain  Username is required
+
+Register With Empty Email Only
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Valid_Username
+    Input Email                Empty
+    Input Password             Valid_Password
+    Click Continue
+    Verify Page Should Contain  Email is required
+
+Register With Empty Password Only
+    Navigate To Register Page  RegisterUrl
+    Input First Name           FirstName
+    Input Last Name            LastName
+    Input Username             Valid_Username
+    Input Email                Valid_Email
+    Input Password             Empty
+    Click Continue
+    Verify Page Should Contain  Password is required
+
+# Verification_Code part
+
+Register With Invalid Verification Code
+    Precondition: Registration form submitted successfully and verification page is shown
+    Input Verification Code    Invalid_Verification_Code
+    Click Verify Email Address
+    Verify Page Should Contain  Invalid verification code
+
+Register With Empty Verification Code
+    Precondition: Registration form submitted successfully and verification page is shown
+    Input Verification Code    Empty
+    Click Verify Email Address
+    Verify Page Should Contain  Verification code is required
+
+Register With Expired Verification Code
+    Precondition: Verification page open and code expired
+    Input Verification Code    Invalid_Verification_Code
+    Click Verify Email Address
+    Verify Page Should Contain  Verification code has expired

@@ -1,0 +1,155 @@
+
+#******************** Settings ************************
+
+*** Settings ***
+Documentation	Issue Test scenario. CRUD Operation: Create, Read, Update, Delete
+Documentation   Issue test scenario on GitLab. Verify CRUD operations for issues: create, read (visible in list), update (rename), and delete. Validate correct success/error messages and required field behavior.
+# TODO: Write Precondition and Postcondition, Tags 
+
+Pre Condition	Tips: Project must be created by the user before User is logged in AND at least one project exists for the user.
+Post Condition	Close all browsers 
+Tags            Issue, TS-Issue, CRUD
+
+#******************* Common Variables ********************
+
+
+*** Variables ***
+
+# NOTE: Please Remove your login credential before uploading Assignments
+
+# TODO: Write Issue creation field variables, Updated name of the issue
+
+# URLs (adjust group-slug/project-slug to your real project when executing)
+Issue_New_Url           = https://gitlab.com/group-slug/project-slug/-/issues/new
+Issue_List_Url          = https://gitlab.com/group-slug/project-slug/-/issues
+
+# Positive data
+Issue_Title             = Login button not working
+Issue_Description       = Steps to reproduce: 1) Open login page 2) Click Login 3) Button unresponsive
+Updated_Issue_Title     = Login button not working – UPDATED
+Label_Bug               = bug
+Priority_Label          = P1
+Assignee_User           = test_user
+
+# Negative / edge data
+Duplicate_Issue_Title   = Login button not working            # same as Issue_Title to test duplicate
+Empty                   =
+Overlong_Issue_Title    = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  # > 80 chars example
+Invalid_Label           = invalid/label?*
+Spaces_Only_Title       =
+Spaces_Only_Desc        =
+
+
+#******************** Test Cases *************************
+
+*** Test Case ***
+
+# TODO: Write Positive Test Cases and Test Process steps
+
+# Positive Tests
+
+Create issue
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Issue_Title
+    Input Issue Description       Issue_Description
+    (Optional) Add Label          Label_Bug
+    (Optional) Add Label          Priority_Label
+    (Optional) Assign To          Assignee_User
+    Click Create Issue
+    Verify Page Should Contain    Issue was successfully created.
+    Verify Issue Visible In       Issue_List_Url
+
+Update name of issue
+    Navigate To Issue List        Issue_List_Url
+    Open Issue                    Issue_Title
+    Click Edit Issue
+    Update Issue Title            Updated_Issue_Title
+    Save Issue
+    Verify Page Should Contain    Issue was successfully updated.
+    Verify Issue Visible As       Updated_Issue_Title
+
+Create second issue with previous updated name
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Updated_Issue_Title
+    Input Issue Description       Issue_Description
+    Click Create Issue
+    Verify Page Should Contain    Issue was successfully created.
+    Verify Issue Visible In       Issue_List_Url
+
+Delete first issue
+    Navigate To Issue List        Issue_List_Url
+    Open Issue                    Updated_Issue_Title
+    Click Delete Issue
+    Confirm Delete
+    Verify Page Should Contain    Issue was successfully deleted.
+    Verify Issue Not In           Issue_List_Url
+
+
+# Negative Tests
+
+Create issue without title
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Empty
+    Input Issue Description       Issue_Description
+    Click Create Issue
+    Verify Page Should Contain    Title can’t be blank
+    Verify Stays On               new issue page
+
+Create issue with overlong title
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Overlong_Issue_Title
+    Input Issue Description       Issue_Description
+    Click Create Issue
+    Verify Page Should Contain    Title is too long
+    Verify Stays On               new issue page
+
+Create issue with spaces-only title
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Spaces_Only_Title
+    Input Issue Description       Issue_Description
+    Click Create Issue
+    Verify Page Should Contain    Title can’t be blank
+    Verify Stays On               new issue page
+
+Create issue with spaces-only description
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Issue_Title
+    Input Issue Description       Spaces_Only_Desc
+    Click Create Issue
+    Verify Page Should Contain    Description is required or normalize whitespace
+    Verify Stays On               new issue page
+
+Create duplicate issue title
+    Precondition: An issue with title 'Login button not working' already exists
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Duplicate_Issue_Title
+    Input Issue Description       Issue_Description
+    Click Create Issue
+    Verify Page Should Contain    Issue with this title already exists OR prevent duplicate by project policy
+    Verify Stays On               new issue page or show warning banner
+
+Add invalid label to issue
+    Navigate To Issue Page        Issue_New_Url
+    Input Issue Title             Issue_Title
+    Input Issue Description       Issue_Description
+    Add Label                     Invalid_Label
+    Click Create Issue
+    Verify Page Should Contain    Invalid label name
+    Verify Stays On               new issue page
+
+Update issue title to empty
+    Navigate To Issue List        Issue_List_Url
+    Open Issue                    Issue_Title
+    Click Edit Issue
+    Update Issue Title            Empty
+    Save Issue
+    Verify Page Should Contain    Title can’t be blank
+    Verify Stays On               edit issue page
+
+Delete issue but cancel confirmation
+    Navigate To Issue List        Issue_List_Url
+    Open Issue                    Issue_Title
+    Click Delete Issue
+    Cancel Delete
+    Verify Page Should Contain    Issue still exists
+    Verify Issue Visible In       Issue_List_Url

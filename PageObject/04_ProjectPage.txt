@@ -1,0 +1,128 @@
+
+#******************** Settings ************************
+
+*** Settings ***
+
+Documentation	Project test scenario on GitLab. Verify CRUD operations for projects: create (blank/template), read (visible in list), update (rename), and delete. Validate correct success/error messages and required field behavior.
+
+Pre Condition	 User is logged in and can access https://gitlab.com/projects/new
+Post Condition	 Close all browsers
+Tags             Project, TS-Project, CRUD
+
+#******************* Common Variables ********************
+
+*** Variables ***
+
+# URLs
+Project_New_Url      = https://gitlab.com/projects/new
+Blank_Project_Url    = https://gitlab.com/projects/new#blank_project
+Template_Project_Url = https://gitlab.com/projects/new#create_from_template
+
+# Positive data
+Project_Name              = First project
+Project_Description       = This is a test project created during testing
+Updated_Project_Name      = First project Updated
+Template_Name             = Template project
+Visibility_Private        = Private
+Visibility_Public         = Public
+
+# Negative / edge data
+Duplicate_Project_Name    = First project        # same as Project_Name to test duplicate error
+Empty                     =
+Overlong_Project_Name     = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  # > 64 chars example
+
+
+#******************** Test Cases *************************
+
+*** Test Case ***
+
+# TODO: Write Positive and Negative Test Cases and Test Process steps
+
+# Positive Test examples are below write test process steps for each below test case
+
+Create blank project
+	Navigate To Project Page     Blank_Project_Url
+	Select Create Blank Project
+	Input Project Name           Project_Name
+	Input Project Description    Project_Description
+	Select Visibility            Visibility_Private
+	Click Create Project
+	Verify Page Should Contain   Project 'First project' was successfully created.
+	Verify Project Visible In    user project list
+
+Create template project
+	Navigate To Project Page     Template_Project_Url
+	Select Create From Template
+	Choose Template              Default Template
+	Input Project Name           Template_Name
+	Click Create Project
+	Verify Page Should Contain   Project 'Template project' was successfully created.
+	Verify Project Visible In    user project list
+
+Update name of template project
+	Navigate To Existing Project Template_Name
+	Open Project Settings
+	Update Project Name          Updated_Project_Name
+	Save Changes
+	Verify Page Should Contain   Project 'First project Updated' was successfully updated.
+	Verify Project Visible As    Updated_Project_Name
+
+Delete template project
+	Navigate To Existing Project Updated_Project_Name
+	Open Project Settings
+	Click Delete Project
+	Confirm Delete
+	Verify Page Should Contain   Project was successfully deleted.
+	Verify Project Not In        user project list
+
+
+# Negative Tests
+
+Create a blank project with the previous same name
+	Navigate To Project Page     Blank_Project_Url
+	Select Create Blank Project
+	Input Project Name           Duplicate_Project_Name
+	Click Create Project
+	Verify Page Should Contain   Name has already been taken
+	Verify Stays On              New project page (no redirect)
+
+Create project without name
+	Navigate To Project Page     Blank_Project_Url
+	Select Create Blank Project
+	Input Project Name           Empty
+	Click Create Project
+	Verify Page Should Contain   Project name is required
+	Verify Stays On              New project page
+
+Create project with overlong name
+	Navigate To Project Page     Blank_Project_Url
+	Select Create Blank Project
+	Input Project Name           Overlong_Project_Name
+	Click Create Project
+	Verify Page Should Contain   Project name is too long
+	Verify Stays On              New project page
+
+Create project with invalid symbols in name
+	Navigate To Project Page     Blank_Project_Url
+	Select Create Blank Project
+	Input Project Name           Name_With_Invalid_Symbols
+	Click Create Project
+	Verify Page Should Contain   Project name contains invalid characters
+	Verify Stays On              New project page
+
+Rename project to an existing project’s name
+	Precondition: Another project with name 'First project' exists
+	Navigate To Existing Project Template_Name
+	Open Project Settings
+	Update Project Name          Duplicate_Project_Name
+	Save Changes
+	Verify Page Should Contain   Name has already been taken
+	Verify Stays On              Project settings page
+
+Delete project without confirming
+	Navigate To Existing Project Project_Name
+	Open Project Settings
+	Click Delete Project
+	Cancel Delete
+	Verify Page Should Contain   Project still exists
+	Verify Project Visible In    user project list
